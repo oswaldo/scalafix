@@ -4,11 +4,11 @@ inThisBuild(
     onLoadMessage := s"Welcome to scalafix ${version.value}",
     scalaVersion := scala212,
     crossScalaVersions := List(scala212, scala211),
-    fork.in(Test, test) := true
+    (Test / test / fork) := true
   )
 )
 
-cancelable.in(Global) := true
+(Global / cancelable) := true
 
 noPublish
 
@@ -26,7 +26,7 @@ lazy val interfaces = project
   .in(file("scalafix-interfaces"))
   .settings(
     noMima,
-    resourceGenerators.in(Compile) += Def.task {
+    (Compile / resourceGenerators) += Def.task {
       val props = new java.util.Properties()
       props.put("scalafixVersion", version.value)
       props.put("scalafixStableVersion", stableVersion.value)
@@ -35,19 +35,19 @@ lazy val interfaces = project
       props.put("scala211", scala211)
       props.put("scala213", scala213)
       val out =
-        managedResourceDirectories.in(Compile).value.head /
+        (Compile / managedResourceDirectories).value.head /
           "scalafix-interfaces.properties"
       IO.write(props, "Scalafix version constants", out)
       List(out)
 
     },
-    javacOptions.in(Compile) ++= List(
+    (Compile / javacOptions) ++= List(
       "-Xlint:all",
       "-Werror"
     ),
-    javacOptions.in(Compile, doc) := List("-Xdoclint:none"),
-    javaHome.in(Compile) := inferJavaHome(),
-    javaHome.in(Compile, doc) := inferJavaHome(),
+    (Compile / doc / javacOptions) := List("-Xdoclint:none"),
+    (Compile / javaHome) := inferJavaHome(),
+    (Compile / doc / javaHome) := inferJavaHome(),
     moduleName := "scalafix-interfaces",
     crossVersion := CrossVersion.disabled,
     crossScalaVersions := List(scala212),
@@ -94,8 +94,8 @@ lazy val cli = project
   .settings(
     moduleName := "scalafix-cli",
     isFullCrossVersion,
-    mainClass in assembly := Some("scalafix.v1.Main"),
-    assemblyJarName in assembly := "scalafix.jar",
+    (assembly / mainClass) := Some("scalafix.v1.Main"),
+    (assembly / assemblyJarName) := "scalafix.jar",
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
       "com.martiansoftware" % "nailgun-server" % "0.9.1",
@@ -180,16 +180,15 @@ lazy val unit = project
       scalatest,
       "org.scalameta" %% "testkit" % scalametaV
     ),
-    compileInputs.in(Compile, compile) := {
-      compileInputs
-        .in(Compile, compile)
+    (Compile / compile / compileInputs) := {
+      (Compile / compile / compileInputs)
         .dependsOn(
-          compile.in(testsInput, Compile),
-          compile.in(testsOutput, Compile)
+          (testsInput / Compile / compile),
+          (testsOutput / Compile / compile)
         )
         .value
     },
-    resourceGenerators.in(Test) += Def.task {
+    (Test / resourceGenerators) += Def.task {
       // copy-pasted code from ScalafixTestkitPlugin to avoid cyclic dependencies between build and sbt-scalafix.
       val props = new java.util.Properties()
 
@@ -202,41 +201,41 @@ lazy val unit = project
 
       put(
         "inputClasspath",
-        fullClasspath.in(testsInput, Compile).value.map(_.data)
+        (testsInput / Compile / fullClasspath).value.map(_.data)
       )
       put(
         "inputSourceDirectories",
-        sourceDirectories.in(testsInput, Compile).value
+        (testsInput / Compile / sourceDirectories).value
       )
       put(
         "outputSourceDirectories",
-        sourceDirectories.in(testsOutput, Compile).value
+        (testsOutput / Compile / sourceDirectories).value
       )
       props.put("scalaVersion", scalaVersion.value)
       props.put("scalacOptions", scalacOptions.value.mkString("|"))
       val out =
-        managedResourceDirectories.in(Test).value.head /
+        (Test / managedResourceDirectories).value.head /
           "scalafix-testkit.properties"
       IO.write(props, "Input data for scalafix testkit", out)
       List(out)
     },
     buildInfoKeys := Seq[BuildInfoKey](
       "baseDirectory" ->
-        baseDirectory.in(ThisBuild).value,
+        (ThisBuild / baseDirectory).value,
       "inputSourceroot" ->
-        sourceDirectory.in(testsInput, Compile).value,
+        (testsInput / Compile / sourceDirectory).value,
       "outputSourceroot" ->
-        sourceDirectory.in(testsOutput, Compile).value,
-      "unitResourceDirectory" -> resourceDirectory.in(Compile).value,
+        (testsOutput / Compile / sourceDirectory).value,
+      "unitResourceDirectory" -> (Compile / resourceDirectory).value,
       "testsInputResources" ->
-        sourceDirectory.in(testsInput, Compile).value / "resources",
+        (testsInput / Compile / sourceDirectory).value / "resources",
       "semanticClasspath" ->
-        classDirectory.in(testsInput, Compile).value,
+        (testsInput / Compile / classDirectory).value,
       "sharedSourceroot" ->
-        baseDirectory.in(ThisBuild).value /
+        (ThisBuild / baseDirectory).value /
           "scalafix-tests" / "shared" / "src" / "main",
       "sharedClasspath" ->
-        classDirectory.in(testsShared, Compile).value
+        (testsShared / Compile / classDirectory).value
     )
   )
   .enablePlugins(BuildInfoPlugin)
@@ -251,10 +250,10 @@ lazy val docs = project
   .in(file("scalafix-docs"))
   .settings(
     noMima,
-    skip in publish := true,
+    (publish / skip) := true,
     moduleName := "scalafix-docs",
     scalaVersion := scala212,
-    mdoc := run.in(Compile).evaluated,
+    mdoc := (Compile / run).evaluated,
     crossScalaVersions := List(scala212),
     libraryDependencies ++= List(
       "com.geirsson" %% "metaconfig-docs" % metaconfigV,
