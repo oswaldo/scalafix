@@ -26,7 +26,7 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
       mimaPreviousArtifacts := Set.empty
     )
     lazy val noPublish = Seq(
-      skip in publish := true
+      (publish / skip) := true
     ) ++ noMima
     lazy val supportedScalaVersions = List(scala211, scala212)
     lazy val isFullCrossVersion = Seq(
@@ -99,18 +99,18 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
       apiURL := Some(url("https://scalacenter.github.io/docs/api/")),
       docsMappingsAPIDir := "docs/api",
       addMappingsToSiteDir(
-        mappings in (ScalaUnidoc, packageDoc),
+        (ScalaUnidoc / packageDoc / mappings),
         docsMappingsAPIDir
       ),
-      scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
+      (ScalaUnidoc / unidoc / scalacOptions) ++= Seq(
         "-doc-source-url",
         scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
         "-sourcepath",
-        baseDirectory.in(LocalRootProject).value.getAbsolutePath,
+        (LocalRootProject / baseDirectory).value.getAbsolutePath,
         "-skip-packages",
         "ammonite:org:scala:scalafix.tests:scalafix.internal"
       ),
-      fork in (ScalaUnidoc, unidoc) := true
+      (ScalaUnidoc / unidoc / fork) := true
     )
 
     lazy val websiteSettings = Seq(
@@ -158,7 +158,7 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
           "coursierVersion" -> coursier.util.Properties.version
         )
       ),
-      fork in tut := true
+      (tut / fork) := true
     )
   }
   import autoImport._
@@ -169,7 +169,7 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
   lazy val isCustomRepository = adhocRepoUri != null && adhocRepoCredentials != null
 
   override def globalSettings: Seq[Def.Setting[_]] = List(
-    stableVersion := version.in(ThisBuild).value.replaceFirst("\\+.*", ""),
+    stableVersion := (ThisBuild / version).value.replaceFirst("\\+.*", ""),
     libraryDependencies ++= List(
       scalacheck % Test,
       scalatest % Test
@@ -179,9 +179,9 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
       Resolver.sonatypeRepo("public"),
       Resolver.mavenLocal
     ),
-    testOptions in Test += Tests.Argument("-oD"),
+    (Test / testOptions) += Tests.Argument("-oD"),
     updateOptions := updateOptions.value.withCachedResolution(true),
-    triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
+    (ThisBuild / triggeredMessage) := Watched.clearWhenTriggered,
     commands += Command.command("save-expect") { s =>
       "unit/test:runMain scalafix.tests.util.SaveExpect" ::
         s
@@ -215,7 +215,7 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
       s
     },
     // There is flakyness in CliGitDiffTests and CliSemanticTests
-    parallelExecution.in(Test) := false,
+    (Test / parallelExecution) := false,
     credentials ++= {
       val credentialsFile = {
         if (adhocRepoCredentials != null) new File(adhocRepoCredentials)
@@ -224,7 +224,7 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
       if (credentialsFile != null) List(new FileCredentials(credentialsFile))
       else Nil
     },
-    publishArtifact.in(Test) := false,
+    (Test / publishArtifact) := false,
     licenses := Seq(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
@@ -281,9 +281,9 @@ object ScalafixBuild extends AutoPlugin with GhpagesKeys {
 
   override def projectSettings: Seq[Def.Setting[_]] = List(
     scalacOptions ++= compilerOptions.value,
-    scalacOptions.in(Compile, console) :=
+    (Compile / console / scalacOptions) :=
       compilerOptions.value :+ "-Yrepl-class-based",
-    scalacOptions.in(Compile, doc) ++= scaladocOptions,
+    (Compile / doc / scalacOptions) ++= scaladocOptions,
     publishTo := Some {
       if (isCustomRepository) "adhoc" at adhocRepoUri
       else if (isSnapshot.value) Opts.resolver.sonatypeSnapshots
