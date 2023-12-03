@@ -100,7 +100,7 @@ lazy val cli = project
       "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
       "com.martiansoftware" % "nailgun-server" % "0.9.1",
       jgit,
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "ch.qos.logback" % "logback-classic" % "1.2.13",
       "org.apache.commons" % "commons-text" % "1.8"
     )
   )
